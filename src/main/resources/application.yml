@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: test-project
+
+gismeteo:
+  token: 56b30cb255.3443075
