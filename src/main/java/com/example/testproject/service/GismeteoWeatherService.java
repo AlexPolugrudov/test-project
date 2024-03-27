@@ -1,13 +1,14 @@
 package com.example.testproject.service;
 
+import com.example.testproject.exception.UnauthorizedException;
 import com.example.testproject.exception.UnavailableWeatherServiceException;
 import com.example.testproject.model.messageA.Coordinates;
 import com.example.testproject.model.messageA.MsA;
 import com.example.testproject.model.weather.Weather;
-import com.example.testproject.util.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -19,6 +20,8 @@ public class GismeteoWeatherService implements WeatherService {
 
     @Value("${gismeteo.token}")
     private String gismeteoToken;
+    @Value("${gismeteo.url}")
+    private String gismeteoUrl;
 
     private final WebClient.Builder webClientBuilder;
 
@@ -35,13 +38,17 @@ public class GismeteoWeatherService implements WeatherService {
 
     private Weather getWeatherDataByCoordinates(Coordinates coordinates) {
         var weather = webClientBuilder.build().get()
-                .uri(Utility.SERVICE_GISMETEO_URL + "/current/", uriBuilder ->
+                .uri(gismeteoUrl + "/current/?", uriBuilder ->
                         uriBuilder
                                 .queryParam("latitude", coordinates.getLatitude())
                                 .queryParam("longitude", coordinates.getLongitude())
                                 .build())
-                .headers(httpHeaders -> httpHeaders.setBearerAuth(gismeteoToken))
+                .header("X-Gismeteo-Token", gismeteoToken)
                 .retrieve()
+                .onStatus(HttpStatus.UNAUTHORIZED::equals, clientResponse -> {
+                    log.error("Unauthorized access to weather service");
+                    return Mono.error(new UnauthorizedException("Unauthorized access to weather service"));
+                })
                 .bodyToMono(Weather.class)
                 .onErrorResume(throwable -> {
                     log.error("Weather service is unavailable");

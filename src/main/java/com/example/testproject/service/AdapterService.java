@@ -3,22 +3,24 @@ package com.example.testproject.service;
 import com.example.testproject.enums.Lang;
 import com.example.testproject.model.messageA.MsA;
 import com.example.testproject.model.messageB.MsB;
-import com.example.testproject.util.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdapterService {
+
+    @Value("${service-b.url}")
+    private String serviceBUrl;
 
     private final WeatherService weatherService;
     private final WebClient.Builder webClientBuilder;
@@ -57,17 +59,14 @@ public class AdapterService {
     }
 
     private boolean isMsgInRuLanguage(Lang lng) {
-        return lng.equals(Lang.RU);
+        return Lang.RU.equals(lng);
     }
 
     private MsB createMsB(String message, double temperature) {
-        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-'T'HH:mm:ssX");
-        var createdAt = LocalDateTime.parse(LocalDateTime.now().format(formatter));
-
         return MsB.builder()
                 .txt(message)
-                .createdDt(createdAt)
-                .currenTemp(temperature)
+                .createdDt(LocalDateTime.now())
+                .currentTemp(temperature)
                 .build();
     }
 
@@ -77,19 +76,19 @@ public class AdapterService {
 
         webClientBuilder.build()
                 .post()
-                .uri(Utility.SERVICE_B_URL)
-                .body(BodyInserters.fromFormData(bodyValues))
+                .uri(serviceBUrl)
+                .body(BodyInserters.fromValue(bodyValues))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
     }
 
-    private MultiValueMap<String, String> createSendingBody(MsB msB) {
-        MultiValueMap<String, String> bodyValues = new LinkedMultiValueMap<>();
+    private Map<String, String> createSendingBody(MsB msB) {
+        Map<String, String> bodyValues = new HashMap<>();
 
-        bodyValues.add("txt", msB.getTxt());
-        bodyValues.add("createdDt", msB.getCreatedDt().toString());
-        bodyValues.add("currentTemp", String.valueOf(msB.getCurrenTemp()));
+        bodyValues.put("txt", msB.getTxt());
+        bodyValues.put("createdDt", msB.getCreatedDt().toString());
+        bodyValues.put("currentTemp", String.valueOf(msB.getCurrentTemp()));
 
         return bodyValues;
     }

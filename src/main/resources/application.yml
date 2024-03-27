@@ -4,3 +4,9 @@ spring:
 
 gismeteo:
   token: 56b30cb255.3443075
+  url: "https://api.gismeteo.net/v2/weather"
+
+service-b:
+  url: "https://service-b"
+
+

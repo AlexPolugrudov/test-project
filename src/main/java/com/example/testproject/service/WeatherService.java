@@ -5,6 +5,7 @@ import com.example.testproject.model.weather.Weather;
 
 public interface WeatherService {
 
-     Weather getWeatherData(MsA msA);
-     double getAirTemperature(MsA msA);
+    Weather getWeatherData(MsA msA);
+
+    double getAirTemperature(MsA msA);
 }
